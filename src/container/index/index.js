@@ -1,4 +1,28 @@
-class Todo {
+import { json } from 'express'
+
+export class Todo {
+  static #NAME = 'todo'
+
+  static #saveData = () => {
+    localStorage.setItem(
+      this.#NAME,
+      JSON.stringify({
+        list: this.#list,
+        count: this.#count,
+      }),
+    )
+  }
+
+  static #loadData = () => {
+    const data = localStorage.getItem(this.#NAME)
+
+    if (data) {
+      const { list, count } = JSON.parse(data)
+      this.#list = list
+      this.#count = count
+    }
+  }
+
   static #list = []
   static #count = 0
 
@@ -31,6 +55,8 @@ class Todo {
 
     this.#button.onclick = this.#handleAdd
 
+    this.#loadData()
+
     this.#render()
   }
 
@@ -39,9 +65,9 @@ class Todo {
     if (value.length > 1) {
       this.#createTaskData(value)
       this.#input.value = ''
+      this.#render()
+      this.#saveData()
     }
-    this.#render()
-    console.log(this.#list)
   }
 
   static #render = () => {
@@ -70,6 +96,12 @@ class Todo {
 
     btnDo.onclick = this.#handleDo(data, btnDo, el)
 
+    if (data.done) {
+      el.classList.add('task--done')
+      btn.classList.toggle('task__button--do')
+      btn.classList.toggle('task__button--done')
+    }
+
     return el
   }
 
@@ -80,6 +112,8 @@ class Todo {
       el.classList.toggle('task--done')
       btn.classList.toggle('task__button--do')
       btn.classList.toggle('task__button--done')
+
+      this.#saveData()
     }
   }
 
@@ -97,7 +131,10 @@ class Todo {
   static #handleCancel = (data) => () => {
     if (confirm('Видалити задачу?')) {
       const result = this.#deleteById(data.id)
-      if (result) this.#render()
+      if (result) {
+        this.#render()
+        this.#saveData()
+      }
     }
   }
 
